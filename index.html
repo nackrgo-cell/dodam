@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>도담 키즈카페 관리</title>
+<style>
+  :root {
+    --primary: #2D6A4F; --primary-light: #52B788; --primary-pale: #D8F3DC;
+    --accent: #F9A03F; --accent-pale: #FEF3E2;
+    --danger: #E63946; --danger-pale: #FFE8EA;
+    --info: #2196F3; --info-pale: #E3F2FD;
+    --warn: #FF9800; --warn-pale: #FFF3E0;
+    --purple: #7B2FBE; --purple-pale: #F3E8FF;
+    --teal: #0097A7; --teal-pale: #E0F7FA;
+    --bg: #F7F9F7; --surface: #FFFFFF; --surface2: #F0F4F0;
+    --border: #E0E8E0; --text: #1A2E1A; --text2: #5A7A5A; --text3: #8FA88F;
+    --radius: 12px; --radius-sm: 8px;
+    --shadow: 0 2px 8px rgba(45,106,79,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system,'Noto Sans KR',BlinkMacSystemFont,sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -2px 12px rgba(0,0,0,0.06); }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 8px 2px 6px; cursor: pointer; gap: 2px; border: none; background: none; min-width: 0; }
+  .nav-item svg { width: 20px; height: 20px; stroke: var(--text3); transition: stroke 0.15s; flex-shrink: 0; }
+  .nav-item span { font-size: 9px; color: var(--text3); white-space: nowrap; }
+  .nav-item.active svg { stroke: var(--primary); }
+  .nav-item.active span { color: var(--primary); font-weight: 700; }
+  .nav-item:active { transform: scale(0.92); }
+
+  .page { display: none; padding: 0 0 84px; }
+  .page.active { display: block; }
+
+  .page-header { padding: 18px 16px 12px; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+  .page-header h1 { font-size: 20px; font-weight: 700; color: var(--text); }
+  .page-header p { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+  .card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 14px 16px; margin-bottom: 10px; box-shadow: var(--shadow); }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px 16px; }
+  .stat-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 14px; box-shadow: var(--shadow); }
+  .stat-card.full { grid-column: 1/-1; }
+  .stat-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+  .stat-val { font-size: 18px; font-weight: 700; color: var(--text); word-break: break-all; }
+  .stat-val.green { color: var(--primary); } .stat-val.red { color: var(--danger); } .stat-val.orange { color: var(--accent); }
+
+  .section { padding: 12px 16px 0; }
+  .section-title { font-size: 12px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 13px; color: var(--text2); margin-bottom: 5px; font-weight: 500; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 15px; background: var(--surface); color: var(--text); outline: none; transition: border-color 0.15s; font-family: inherit; }
+  .form-group input:focus, .form-group select:focus { border-color: var(--primary-light); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 18px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; font-family: inherit; }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--primary); color: white; width: 100%; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-row { display: flex; gap: 8px; } .btn-row .btn { flex: 1; }
+
+  .inner-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 14px; overflow-x: auto; }
+  .inner-tab { padding: 9px 12px; font-size: 13px; font-weight: 600; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; white-space: nowrap; }
+  .inner-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  .list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .list-item:last-child { border-bottom: none; }
+  .list-item-left { flex: 1; }
+  .list-item-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .list-item-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .list-item-right { display: flex; align-items: center; gap: 8px; }
+  .amount { font-size: 15px; font-weight: 700; }
+  .amount.income { color: var(--primary); } .amount.expense { color: var(--danger); }
+
+  .badge { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 600; }
+  .badge-green { background: var(--primary-pale); color: var(--primary); }
+  .badge-blue { background: var(--info-pale); color: var(--info); }
+  .badge-orange { background: var(--accent-pale); color: var(--warn); }
+  .badge-red { background: var(--danger-pale); color: var(--danger); }
+  .badge-gray { background: var(--surface2); color: var(--text2); }
+  .badge-purple { background: var(--purple-pale); color: var(--purple); }
+  .badge-teal { background: var(--teal-pale); color: var(--teal); }
+
+  .empty { text-align: center; padding: 28px 0; color: var(--text3); font-size: 14px; }
+  .empty-icon { font-size: 28px; margin-bottom: 6px; }
+  .del-btn { background: none; border: none; cursor: pointer; color: var(--text3); padding: 4px; border-radius: 4px; }
+  .del-btn:hover { color: var(--danger); }
+
+  /* TODAY BANNER */
+  .today-banner { margin: 12px 16px 0; background: var(--primary-pale); border-radius: var(--radius); padding: 12px 14px; border: 1px solid #b7dfc5; }
+  .today-banner-label { font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; }
+  .today-row { display: flex; justify-content: space-between; margin-top: 6px; gap: 10px; }
+  .today-item { flex: 1; }
+  .today-item-label { font-size: 11px; color: var(--text2); }
+  .today-item-val { font-size: 16px; font-weight: 700; color: var(--text); word-break: break-all; }
+  .today-item-val.green { color: var(--primary); } .today-item-val.red { color: var(--danger); }
+
+  /* TODO */
+  .todo-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .todo-item:last-child { border-bottom: none; }
+  .todo-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .todo-check.done { background: var(--primary); border-color: var(--primary); }
+  .todo-check.done::after { content: '✓'; color: white; font-size: 12px; font-weight: 700; }
+  .todo-title { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+  .todo-title.done { text-decoration: line-through; color: var(--text3); }
+  .todo-add-row { display: flex; gap: 8px; margin-top: 10px; }
+  .todo-input { flex: 1; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; background: var(--surface); color: var(--text); outline: none; font-family: inherit; }
+  .todo-input:focus { border-color: var(--primary-light); }
+  .todo-add-btn { padding: 9px 14px; background: var(--primary); color: white; border: none; border-radius: var(--radius-sm); font-size: 16px; font-weight: 700; cursor: pointer; }
+
+  /* MONTHLY CALENDAR */
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; }
+  .cal-nav-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 14px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text); }
+  .cal-month-label { font-size: 17px; font-weight: 700; color: var(--text); }
+  .cal-grid { padding: 0 12px; }
+  .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-bottom: 4px; }
+  .cal-weekday { text-align: center; font-size: 11px; font-weight: 700; color: var(--text3); padding: 4px 0; }
+  .cal-weekday.sat { color: var(--info); }
+  .cal-weekday.sun { color: var(--danger); }
+  .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal-day { min-height: 62px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 4px 3px; cursor: pointer; transition: background 0.1s; }
+  .cal-day:hover { background: var(--primary-pale); }
+  .cal-day.today { border-color: var(--primary); border-width: 2px; }
+  .cal-day.other-month { background: var(--bg); opacity: 0.5; }
+  .cal-day-num { font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 2px; }
+  .cal-day.today .cal-day-num { color: var(--primary); font-weight: 800; }
+  .cal-day-num.sun { color: var(--danger); }
+  .cal-day-num.sat { color: var(--info); }
+  .cal-event { font-size: 9px; font-weight: 600; padding: 1px 3px; border-radius: 3px; margin-bottom: 1px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cal-event.baby { background: #FFF3E0; color: #E65100; }
+  .cal-event.group { background: #E8F5E9; color: #2E7D32; }
+  .cal-event.art { background: #FCE4EC; color: #880E4F; }
+  .cal-event.korean { background: #E8EAF6; color: #283593; }
+  .cal-event.english { background: #E0F7FA; color: #006064; }
+  .cal-event.custom { background: var(--accent-pale); color: #BF360C; }
+
+  /* DAY DETAIL MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border-radius: 20px 20px 0 0; padding: 0 0 32px; width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; }
+  .modal-handle-bar { padding: 12px 16px 0; text-align: center; }
+  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; display: inline-block; }
+  .modal-header { padding: 12px 16px 10px; border-bottom: 1px solid var(--border); }
+  .modal-title { font-size: 17px; font-weight: 700; color: var(--text); }
+  .modal-date { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .modal-body { padding: 12px 16px; }
+  .modal-class-card { background: var(--surface2); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px; border-left: 3px solid var(--primary); }
+  .modal-class-card.baby { border-color: #FF6F00; }
+  .modal-class-card.group { border-color: #2E7D32; }
+  .modal-class-card.art { border-color: #880E4F; }
+  .modal-class-card.korean { border-color: #283593; }
+  .modal-class-card.english { border-color: #006064; }
+  .modal-class-time { font-size: 12px; color: var(--text3); margin-bottom: 3px; }
+  .modal-class-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .modal-class-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .modal-close-btn { display: block; width: calc(100% - 32px); margin: 8px 16px 0; padding: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 15px; font-weight: 600; cursor: pointer; color: var(--text); }
+
+  /* PACKAGE */
+  .pkg-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 14px 16px; margin-bottom: 10px; box-shadow: var(--shadow); }
+  .pkg-name { font-size: 15px; font-weight: 700; color: var(--text); }
+  .pkg-student { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .pkg-progress-bar { background: var(--border); border-radius: 6px; height: 8px; overflow: hidden; margin: 8px 0 4px; }
+  .pkg-progress-fill { height: 100%; border-radius: 6px; background: var(--primary-light); transition: width 0.3s; }
+  .pkg-progress-fill.warn { background: var(--accent); }
+  .pkg-progress-fill.danger { background: var(--danger); }
+  .pkg-counts { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); }
+
+  /* HOME VISIT */
+  .hv-teacher-card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); padding: 14px 16px; margin-bottom: 10px; box-shadow: var(--shadow); }
+  .hv-teacher-name { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .hv-slot { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .hv-slot:last-child { border-bottom: none; }
+  .hv-slot-left { flex: 1; }
+  .hv-slot-day { font-size: 12px; font-weight: 700; color: var(--primary); }
+  .hv-slot-time { font-size: 12px; color: var(--text2); }
+  .hv-slot-student { font-size: 14px; font-weight: 600; color: var(--text); }
+  .hv-slot-pkg { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+  /* STAFF */
+  .progress-bar { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; margin-top: 5px; }
+  .progress-fill { height: 100%; border-radius: 4px; }
+  .progress-fill.green { background: var(--primary-light); }
+  .progress-fill.orange { background: var(--accent); }
+  .progress-fill.red { background: var(--danger); }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  @media (min-width: 600px) {
+    .page { max-width: 480px; margin: 0 auto; }
+    .nav-bar { max-width: 480px; left: 50%; transform: translateX(-50%); right: auto; width: 480px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+    .modal { margin: 0 auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== HOME ===== -->
+<div id="page-home" class="page active">
+  <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;">
+    <div>
+      <h1>도담 ☀️</h1>
+      <p id="home-month-label"></p>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button onclick="manualSync()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;color:var(--text2);">🔄 동기화</button>
+      <button onclick="openSettings()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;color:var(--text2);">⚙️ 설정</button>
+    </div>
+  </div>
+  <div id="sync-status" style="font-size:12px;padding:6px 16px;color:var(--text3);">📵 오프라인 (로컬 저장)</div>
+  <div class="today-banner">
+    <div class="today-banner-label">오늘</div>
+    <div class="today-row">
+      <div class="today-item"><div class="today-item-label">매출</div><div class="today-item-val green" id="today-income">₫0</div></div>
+      <div class="today-item"><div class="today-item-label">매입</div><div class="today-item-val red" id="today-expense">₫0</div></div>
+      <div class="today-item"><div class="today-item-label">수업</div><div class="today-item-val" id="today-classes">0건</div></div>
+    </div>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-label">이번달 매출</div><div class="stat-val green" id="month-income">₫0</div></div>
+    <div class="stat-card"><div class="stat-label">이번달 매입</div><div class="stat-val red" id="month-expense">₫0</div></div>
+  </div>
+  <div class="section">
+    <div class="section-title">오늘 거래</div>
+    <div class="card" style="padding:8px 16px;"><div id="today-tx-list"><div class="empty"><div class="empty-icon">📋</div>오늘 내역이 없어요</div></div></div>
+  </div>
+  <div class="section">
+    <div class="section-title">할 일</div>
+    <div class="card" style="padding:10px 16px;">
+      <div id="todo-list"><div class="empty"><div class="empty-icon">✅</div>할 일을 추가해보세요</div></div>
+      <div class="todo-add-row">
+        <input class="todo-input" id="todo-input" type="text" placeholder="새 할 일 입력..." onkeydown="if(event.key==='Enter')addTodo()">
+        <button class="todo-add-btn" onclick="addTodo()">+</button>
+      </div>
+    </div>
+  </div>
+  <div class="section" style="padding-bottom:12px;">
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="showPage('page-sales')">+ 매출 입력</button>
+      <button class="btn btn-secondary" onclick="showPage('page-expense')">− 매입 입력</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SALES ===== -->
+<div id="page-sales" class="page">
+  <div class="page-header"><h1>매출 입력</h1></div>
+  <div class="section">
+    <div class="card">
+      <div class="form-group"><label>날짜</label><input type="date" id="sale-date"></div>
+      <div class="form-group"><label>유형</label>
+        <select id="sale-type" onchange="onSaleTypeChange()">
+          <option value="입장료">입장료 (자유 이용)</option>
+          <option value="수업패키지">수업 패키지 구매</option>
+          <option value="단체수업">단체수업</option>
+          <option value="음료간식">음료 / 간식 판매</option>
+        </select>
+      </div>
+      <div id="pkg-fields" style="display:none;">
+        <div class="form-group"><label>아이 이름</label><input type="text" id="sale-pkg-student" placeholder="홍길동"></div>
+        <div class="form-group"><label>패키지명</label><input type="text" id="sale-pkg-name" placeholder="예: 발레 10회권"></div>
+        <div class="form-group"><label>총 횟수</label><input type="number" id="sale-pkg-total" placeholder="10" min="1"></div>
+      </div>
+      <div class="form-group"><label>금액 (₫)</label><input type="number" id="sale-amount" placeholder="0"></div>
+      <div class="form-group"><label>메모</label><input type="text" id="sale-memo" placeholder="선택 사항"></div>
+      <button class="btn btn-primary" onclick="addSale()">저장</button>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">매출 내역</div>
+    <div class="card" style="padding:8px 16px;"><div id="sales-list"><div class="empty">내역 없음</div></div></div>
+  </div>
+</div>
+
+<!-- ===== EXPENSE ===== -->
+<div id="page-expense" class="page">
+  <div class="page-header"><h1>매입 입력</h1></div>
+  <div class="section">
+    <div class="card">
+      <div class="form-group"><label>날짜</label><input type="date" id="expense-date"></div>
+      <div class="form-group"><label>유형</label>
+        <select id="expense-type">
+          <option value="재료비">재료비 (음료/간식)</option>
+          <option value="교재비">교재 / 수업 용품</option>
+          <option value="기타매입">기타 매입</option>
+        </select>
+      </div>
+      <div class="form-group"><label>금액 (₫)</label><input type="number" id="expense-amount" placeholder="0"></div>
+      <div class="form-group"><label>메모</label><input type="text" id="expense-memo" placeholder="선택 사항"></div>
+      <button class="btn btn-primary" onclick="addExpense()">저장</button>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">매입 내역</div>
+    <div class="card" style="padding:8px 16px;"><div id="expense-list"><div class="empty">내역 없음</div></div></div>
+  </div>
+</div>
+
+<!-- ===== SCHEDULE (MONTHLY) ===== -->
+<div id="page-schedule" class="page">
+  <div class="page-header">
+    <h1>수업 스케쥴</h1>
+    <p>고정 수업 자동 표시 · 날짜 클릭으로 상세 확인</p>
+  </div>
+  <div class="cal-nav">
+    <button class="cal-nav-btn" onclick="changeMonth(-1)">◀</button>
+    <span class="cal-month-label" id="cal-month-label"></span>
+    <button class="cal-nav-btn" onclick="changeMonth(1)">▶</button>
+  </div>
+  <div class="cal-grid">
+    <div class="cal-weekdays">
+      <div class="cal-weekday">월</div><div class="cal-weekday">화</div><div class="cal-weekday">수</div>
+      <div class="cal-weekday">목</div><div class="cal-weekday">금</div><div class="cal-weekday sat">토</div><div class="cal-weekday sun">일</div>
+    </div>
+    <div class="cal-days" id="cal-days"></div>
+  </div>
+  <div class="section" style="margin-top:12px;">
+    <div class="section-title">수업 색상 범례</div>
+    <div class="card" style="padding:10px 14px;">
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <span class="cal-event baby" style="font-size:12px;padding:3px 8px;">베이비클래스</span>
+        <span class="cal-event group" style="font-size:12px;padding:3px 8px;">단체수업</span>
+        <span class="cal-event art" style="font-size:12px;padding:3px 8px;">미술수업</span>
+        <span class="cal-event korean" style="font-size:12px;padding:3px 8px;">한글수업</span>
+        <span class="cal-event english" style="font-size:12px;padding:3px 8px;">영어수업</span>
+      </div>
+    </div>
+  </div>
+  <div class="section" style="margin-top:4px;">
+    <div class="section-title">강사 정보 설정</div>
+    <div class="card">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:10px;">수업별 담당 강사를 등록하세요</div>
+      <div id="fixed-class-teachers"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== HOME VISIT ===== -->
+<div id="page-homevisit" class="page">
+  <div class="page-header">
+    <h1>방문수업</h1>
+    <p>매주 고정 방문수업 관리</p>
+  </div>
+
+  <div class="section">
+    <div class="inner-tabs">
+      <div class="inner-tab active" onclick="switchHvTab('schedule')" id="hvtab-schedule">주간 스케쥴</div>
+      <div class="inner-tab" onclick="switchHvTab('teachers')" id="hvtab-teachers">선생님 설정</div>
+      <div class="inner-tab" onclick="switchHvTab('students')" id="hvtab-students">학생 관리</div>
+    </div>
+
+    <div id="hv-schedule">
+      <div id="hv-teacher-list"></div>
+    </div>
+
+    <div id="hv-teachers" style="display:none;">
+      <div class="card">
+        <div class="form-group"><label>선생님 이름</label><input type="text" id="hv-teacher-name" placeholder="이름 입력"></div>
+        <div class="form-group"><label>정산 방식</label>
+          <select id="hv-teacher-pay">
+            <option value="고정">월 고정</option>
+            <option value="수업당">수업당 단가</option>
+          </select>
+        </div>
+        <div class="form-group"><label>금액 (₫)</label><input type="number" id="hv-teacher-amount" placeholder="0"></div>
+        <button class="btn btn-primary" onclick="addHvTeacher()">선생님 추가</button>
+      </div>
+      <div class="card" style="padding:8px 16px;"><div id="hv-teachers-list"><div class="empty">등록된 선생님 없음</div></div></div>
+    </div>
+
+    <div id="hv-students" style="display:none;">
+      <div class="card">
+        <div class="form-group"><label>아이 이름</label><input type="text" id="hv-student-name" placeholder="이름 입력"></div>
+        <div class="form-group"><label>담당 선생님</label>
+          <select id="hv-student-teacher"><option value="">선생님 선택</option></select>
+        </div>
+        <div class="form-group"><label>수업 요일</label>
+          <select id="hv-student-day">
+            <option value="0">일요일</option><option value="1">월요일</option><option value="2">화요일</option>
+            <option value="3">수요일</option><option value="4">목요일</option><option value="5">금요일</option><option value="6">토요일</option>
+          </select>
+        </div>
+        <div class="form-group"><label>수업 시간</label><input type="time" id="hv-student-time" value="10:00"></div>
+        <div class="form-group"><label>연결 패키지 (선택)</label>
+          <select id="hv-student-pkg"><option value="">패키지 없음</option></select>
+        </div>
+        <button class="btn btn-primary" onclick="addHvStudent()">학생 추가</button>
+      </div>
+      <div class="card" style="padding:8px 16px;"><div id="hv-students-list"><div class="empty">등록된 학생 없음</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PACKAGES ===== -->
+<div id="page-packages" class="page">
+  <div class="page-header"><h1>패키지 관리</h1></div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-label">활성 패키지</div><div class="stat-val" id="pkg-active-count">0</div></div>
+    <div class="stat-card"><div class="stat-label">소진 임박 (2회↓)</div><div class="stat-val orange" id="pkg-low-count">0</div></div>
+  </div>
+  <div class="section">
+    <div class="inner-tabs">
+      <div class="inner-tab active" onclick="switchPkgTab('active')" id="ptab-active">진행중</div>
+      <div class="inner-tab" onclick="switchPkgTab('done')" id="ptab-done">완료</div>
+    </div>
+    <div id="pkg-active-list"></div>
+    <div id="pkg-done-list" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- ===== STAFF ===== -->
+<div id="page-staff" class="page">
+  <div class="page-header"><h1>인건비</h1></div>
+  <div class="section">
+    <div class="inner-tabs">
+      <div class="inner-tab active" onclick="switchStaffTab('hourly')" id="stab-hourly">파트타임</div>
+      <div class="inner-tab" onclick="switchStaffTab('monthly')" id="stab-monthly">월급직</div>
+      <div class="inner-tab" onclick="switchStaffTab('teacher')" id="stab-teacher">강사 등록</div>
+    </div>
+    <div id="staff-hourly">
+      <div class="card">
+        <div class="form-group"><label>직원 이름</label><input type="text" id="h-name" placeholder="홍길동"></div>
+        <div class="form-row">
+          <div class="form-group"><label>시급 (₫)</label><input type="number" id="h-rate" placeholder="0"></div>
+          <div class="form-group"><label>근무 시간 (h)</label><input type="number" id="h-hours" placeholder="0" step="0.5"></div>
+        </div>
+        <div class="form-group"><label>날짜</label><input type="date" id="h-date"></div>
+        <button class="btn btn-primary" onclick="addHourly()">추가</button>
+      </div>
+      <div class="card" style="padding:8px 16px;"><div id="hourly-list"><div class="empty">기록 없음</div></div></div>
+      <div class="stat-card" style="margin:0 0 10px;background:var(--primary-pale);border-color:#b7dfc5;">
+        <div class="stat-label">파트타임 합계</div><div class="stat-val green" id="hourly-total">₫0</div>
+      </div>
+    </div>
+    <div id="staff-monthly" style="display:none;">
+      <div class="card">
+        <div class="form-group"><label>직원 이름</label><input type="text" id="m-name" placeholder="김직원"></div>
+        <div class="form-group"><label>월급 (₫)</label><input type="number" id="m-salary" placeholder="0"></div>
+        <button class="btn btn-primary" onclick="addMonthly()">추가</button>
+      </div>
+      <div class="card" style="padding:8px 16px;"><div id="monthly-list"><div class="empty">기록 없음</div></div></div>
+      <div class="stat-card" style="margin:0 0 10px;background:var(--primary-pale);border-color:#b7dfc5;">
+        <div class="stat-label">월급직 합계</div><div class="stat-val green" id="monthly-total">₫0</div>
+      </div>
+    </div>
+    <div id="staff-teacher" style="display:none;">
+      <div class="card">
+        <div class="form-group"><label>강사 이름</label><input type="text" id="t-name" placeholder="이강사"></div>
+        <div class="form-group"><label>정산 방식</label>
+          <select id="t-type" onchange="onTeacherTypeChange()">
+            <option value="고정">월 고정 강사비</option>
+            <option value="수업당">수업당 단가</option>
+          </select>
+        </div>
+        <div class="form-group"><label>금액 (₫)</label><input type="number" id="t-amount" placeholder="0"></div>
+        <div class="form-group" id="t-count-row" style="display:none;"><label>이번달 수업 횟수</label><input type="number" id="t-count" placeholder="0"></div>
+        <button class="btn btn-primary" onclick="addTeacher()">강사 등록</button>
+      </div>
+      <div class="card" style="padding:8px 16px;"><div id="teacher-list"><div class="empty">기록 없음</div></div></div>
+      <div class="stat-card" style="margin:0 0 10px;background:var(--primary-pale);border-color:#b7dfc5;">
+        <div class="stat-label">강사비 합계</div><div class="stat-val green" id="teacher-total">₫0</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FIXED ===== -->
+<div id="page-fixed" class="page">
+  <div class="page-header"><h1>고정 지출</h1></div>
+  <div class="section">
+    <div class="card">
+      <div class="form-group"><label>항목명</label><input type="text" id="f-name" placeholder="예: 임대료"></div>
+      <div class="form-group"><label>금액 (₫/월)</label><input type="number" id="f-amount" placeholder="0"></div>
+      <div class="form-group"><label>카테고리</label>
+        <select id="f-category">
+          <option value="임대">임대료</option><option value="공과금">공과금</option>
+          <option value="통신">통신비</option><option value="보험">보험료</option><option value="기타">기타</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="addFixed()">추가</button>
+    </div>
+    <div class="section-title" style="margin-top:4px;">등록된 항목</div>
+    <div class="card" style="padding:8px 16px;"><div id="fixed-list"><div class="empty">항목 없음</div></div></div>
+    <div class="stat-card" style="background:var(--danger-pale);border-color:#f5c6cb;">
+      <div class="stat-label">월 고정 지출 합계</div><div class="stat-val red" id="fixed-total">₫0</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== REPORT ===== -->
+<div id="page-report" class="page">
+  <div class="page-header"><h1>월간 리포트</h1></div>
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-label">총 매출</div><div class="stat-val green" id="r-income">₫0</div></div>
+    <div class="stat-card"><div class="stat-label">총 매입</div><div class="stat-val red" id="r-expense">₫0</div></div>
+    <div class="stat-card"><div class="stat-label">인건비</div><div class="stat-val red" id="r-staff">₫0</div></div>
+    <div class="stat-card"><div class="stat-label">고정 지출</div><div class="stat-val red" id="r-fixed">₫0</div></div>
+    <div class="stat-card full" style="background:var(--primary-pale);border-color:#b7dfc5;">
+      <div class="stat-label">순이익</div><div class="stat-val green" id="r-profit" style="font-size:26px;">₫0</div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">매출 구성</div>
+    <div class="card" id="r-breakdown"></div>
+    <div class="btn-row" style="margin-top:12px;padding-bottom:12px;">
+      <button class="btn btn-secondary" onclick="exportSummary()">📋 텍스트 복사</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DAY DETAIL MODAL ===== -->
+<div class="modal-overlay" id="day-modal">
+  <div class="modal">
+    <div class="modal-handle-bar"><div class="modal-handle"></div></div>
+    <div class="modal-header">
+      <div class="modal-title" id="modal-day-title"></div>
+      <div class="modal-date" id="modal-day-date"></div>
+    </div>
+    <div class="modal-body" id="modal-day-body"></div>
+    <button class="modal-close-btn" onclick="closeModal()">닫기</button>
+  </div>
+</div>
+
+<!-- ===== SETTINGS MODAL ===== -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <div class="modal-handle-bar"><div class="modal-handle"></div></div>
+    <div class="modal-header">
+      <div class="modal-title">⚙️ Google Sheets 연동 설정</div>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:16px;">
+        Apps Script 배포 URL을 입력하면<br>모든 데이터가 구글 시트에 저장돼요.
+      </div>
+      <div class="form-group">
+        <label>Script URL</label>
+        <input type="text" id="settings-url-input" placeholder="https://script.google.com/macros/s/..." style="font-size:13px;">
+      </div>
+      <div id="sync-status" style="font-size:13px;margin-bottom:12px;min-height:20px;"></div>
+      <button class="btn btn-primary" onclick="saveSettings()">저장 및 연결</button>
+      <button class="modal-close-btn" onclick="closeSettings()" style="margin-top:8px;">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BOTTOM NAV ===== -->
+<nav class="nav-bar">
+  <button class="nav-item active" id="nav-home" onclick="showPage('page-home')">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>홈</span>
+  </button>
+  <button class="nav-item" id="nav-sales" onclick="showPage('page-sales')">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 5 5 12"/></svg>
+    <span>매출</span>
+  </button>
+  <button class="nav-item" id="nav-expense" onclick="showPage('page-expense')">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="5 12 12 19 19 12"/></svg>
+    <span>매입</span>
+  </button>
+  <button class="nav-item" id="nav-schedule" onclick="showPage('page-schedule')">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span>스케쥴</span>
+  </button>
+  <button class="nav-item" id="nav-homevisit" onclick="showPage('page-homevisit')">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3"/></svg>
+    <span>방문수업</span>
+  </button>
+  <button class="nav-item" id="nav-packages" onclick="showPage('page-packages')">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+    <span>패키지</span>
+  </button>
+  <button class="nav-item" id="nav-staff" onclick="showPage('page-staff')">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <span>인건비</span>
+  </button>
+  <button class="nav-item" id="nav-report" onclick="showPage('page-report')">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    <span>리포트</span>
+  </button>
+</nav>
+
+<script>
+// ============================================================
+// FIXED CLASS DEFINITIONS
+// ============================================================
+// dayOfWeek: 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
+const FIXED_CLASSES = [
+  { id: 'baby-wed',    name: '베이비클래스', day: 3, times: ['10:00','11:00'], type: 'baby' },
+  { id: 'baby-thu',    name: '베이비클래스', day: 4, times: ['10:00','11:00'], type: 'baby' },
+  { id: 'group-fri',   name: '단체수업',     day: 5, times: ['10:00'], duration: '4.5h', type: 'group' },
+  { id: 'art-thu',     name: '미술수업',     day: 4, times: ['14:00','15:00','16:00','17:00'], type: 'art' },
+  { id: 'korean-thu',  name: '한글수업',     day: 4, times: ['18:00','19:00','20:00'], type: 'korean' },
+  { id: 'english-sun', name: '영어수업',     day: 0, times: ['10:00','11:00','12:00','13:00'], type: 'english' },
+];
+
+// ============================================================
+// STATE
+// ============================================================
+const STORE_KEY = 'dodam_v2';
+const SCRIPT_URL_KEY = 'dodam_script_url';
+let SCRIPT_URL = localStorage.getItem(SCRIPT_URL_KEY) || 'https://script.google.com/macros/s/AKfycbzlcDkfStY9TZSzR46IGcvKOwQQUO0QCUw8QvY64xU_rNRuEW8f2mmQl5XF6PQva13C/exec';
+
+let state = {
+  sales: [], expenses: [], hourly: [], monthly: [], teachers: [],
+  fixed: [], packages: [], todos: [],
+  fixedClassTeachers: {},
+  hvTeachers: [],
+  hvStudents: [],
+};
+
+let calYear, calMonth, currentHvTab = 'schedule';
+let isSyncing = false;
+
+// --- 로컬 캐시 ---
+function loadLocalState() {
+  try {
+    const saved = localStorage.getItem(STORE_KEY);
+    if (saved) state = Object.assign(state, JSON.parse(saved));
+  } catch(e) {}
+}
+function saveLocalState() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+// --- Google Sheets 연동 ---
+async function loadFromSheets() {
+  if (!SCRIPT_URL) return false;
+  setSyncStatus('loading');
+  try {
+    const res = await fetch(SCRIPT_URL + '?action=load', { method: 'GET' });
+    const json = await res.json();
+    if (json.ok && json.data) {
+      state = Object.assign(state, json.data);
+      saveLocalState();
+      setSyncStatus('ok');
+      return true;
+    } else {
+      setSyncStatus('error', json.error);
+      return false;
+    }
+  } catch(e) {
+    setSyncStatus('error', e.message);
+    return false;
+  }
+}
+
+async function saveToSheets() {
+  if (!SCRIPT_URL) { saveLocalState(); return; }
+  saveLocalState();
+  setSyncStatus('saving');
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'save', state }),
+    });
+    const json = await res.json();
+    if (json.ok) setSyncStatus('ok');
+    else setSyncStatus('error', json.error);
+  } catch(e) {
+    setSyncStatus('error', e.message);
+  }
+}
+
+function setSyncStatus(status, msg) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  const map = {
+    ok:      { text: '✅ 동기화 완료', color: '#2D6A4F' },
+    saving:  { text: '⏳ 저장 중...', color: '#FF9800' },
+    loading: { text: '⏳ 불러오는 중...', color: '#2196F3' },
+    error:   { text: '❌ 오류: ' + (msg||''), color: '#E63946' },
+    offline: { text: '📵 오프라인 (로컬 저장)', color: '#8FA88F' },
+  };
+  const s = map[status] || map.offline;
+  el.textContent = s.text;
+  el.style.color = s.color;
+}
+
+function saveState() {
+  saveToSheets();
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function fmt(n) {
+  const abs = Math.abs(n), sign = n < 0 ? '-' : '';
+  if (abs >= 1000000) return sign + '₫' + (abs/1000000).toFixed(1) + 'M';
+  if (abs >= 1000) return sign + '₫' + Math.round(abs/1000) + 'K';
+  return sign + '₫' + Math.round(abs).toLocaleString();
+}
+function fmtFull(n) {
+  return (n < 0 ? '-' : '') + '₫' + Math.round(Math.abs(n)).toLocaleString();
+}
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,5); }
+const KO_DAYS = ['일','월','화','수','목','금','토'];
+const KO_DAYS_FULL = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showPage(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  const nb = document.getElementById('nav-' + pageId.replace('page-',''));
+  if (nb) nb.classList.add('active');
+  refreshAll();
+}
+
+// ============================================================
+// CALENDAR
+// ============================================================
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+
+// Get all fixed classes for a given date string
+function getFixedClassesForDate(dateStr) {
+  const d = new Date(dateStr);
+  const dow = d.getDay();
+  const result = [];
+  FIXED_CLASSES.forEach(fc => {
+    if (fc.day === dow) {
+      fc.times.forEach(time => {
+        const key = fc.id + '_' + time;
+        const info = state.fixedClassTeachers[key] || {};
+        result.push({
+          classId: fc.id, time, name: fc.name, type: fc.type,
+          teacher: info.teacher || '', students: info.students || [],
+          duration: fc.duration || ''
+        });
+      });
+    }
+  });
+  result.sort((a,b) => a.time.localeCompare(b.time));
+  return result;
+}
+
+function renderCalendar() {
+  const todayISO = todayStr();
+  document.getElementById('cal-month-label').textContent = calYear + '년 ' + (calMonth+1) + '월';
+
+  const firstDow = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+  // Convert to Mon-start offset: Mon=0, Tue=1 ... Sun=6
+  const firstOffset = (firstDow + 6) % 7;
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+
+  const totalCells = Math.ceil((firstOffset + daysInMonth) / 7) * 7;
+  let html = '';
+
+  for (let i = 0; i < totalCells; i++) {
+    let day, isOther = false, dateStr = '';
+    if (i < firstOffset) {
+      day = daysInPrev - firstOffset + i + 1;
+      dateStr = new Date(calYear, calMonth - 1, day).toISOString().split('T')[0];
+      isOther = true;
+    } else if (i < firstOffset + daysInMonth) {
+      day = i - firstOffset + 1;
+      dateStr = new Date(calYear, calMonth, day).toISOString().split('T')[0];
+    } else {
+      day = i - firstOffset - daysInMonth + 1;
+      dateStr = new Date(calYear, calMonth + 1, day).toISOString().split('T')[0];
+      isOther = true;
+    }
+
+    // col position in Mon-start grid: 0=Mon…5=Sat,6=Sun
+    const col = i % 7;
+    const isToday = dateStr === todayISO;
+    const classes = isOther ? [] : getFixedClassesForDate(dateStr);
+
+    const seen = {};
+    const eventsHtml = classes.map(c => {
+      if (seen[c.type]) return '';
+      seen[c.type] = true;
+      return `<div class="cal-event ${c.type}">${c.name}</div>`;
+    }).join('');
+
+    // col 5 = 토(Sat), col 6 = 일(Sun)
+    const numClass = col === 6 ? 'cal-day-num sun' : col === 5 ? 'cal-day-num sat' : 'cal-day-num';
+
+    html += `<div class="cal-day${isOther?' other-month':''}${isToday?' today':''}" onclick="${isOther?'':'openDayModal(\''+dateStr+'\')'}">
+      <div class="${numClass}">${day}</div>
+      ${eventsHtml}
+    </div>`;
+  }
+  document.getElementById('cal-days').innerHTML = html;
+  renderFixedClassTeacherInputs();
+}
+
+function openDayModal(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const dow = d.getDay();
+  const classes = getFixedClassesForDate(dateStr);
+
+  document.getElementById('modal-day-title').textContent =
+    d.getMonth()+1 + '월 ' + d.getDate() + '일 (' + KO_DAYS[dow] + ')';
+  document.getElementById('modal-day-date').textContent = dateStr;
+
+  if (!classes.length) {
+    document.getElementById('modal-day-body').innerHTML = '<div class="empty"><div class="empty-icon">😴</div>수업 없는 날</div>';
+  } else {
+    document.getElementById('modal-day-body').innerHTML = classes.map(c => `
+      <div class="modal-class-card ${c.type}">
+        <div class="modal-class-time">${c.time}${c.duration ? ' (' + c.duration + ')' : ''}</div>
+        <div class="modal-class-name">${c.name}</div>
+        <div class="modal-class-tags">
+          ${c.teacher ? `<span class="badge badge-green">👩‍🏫 ${c.teacher}</span>` : '<span class="badge badge-gray">선생님 미등록</span>'}
+          ${c.students.length ? c.students.map(s=>`<span class="badge badge-blue">🧒 ${s}</span>`).join('') : ''}
+        </div>
+      </div>`).join('');
+  }
+  document.getElementById('day-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('day-modal').classList.remove('open');
+}
+
+function renderFixedClassTeacherInputs() {
+  const el = document.getElementById('fixed-class-teachers');
+  if (!el) return;
+  let html = '';
+  FIXED_CLASSES.forEach(fc => {
+    html += `<div style="margin-bottom:14px;">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;">
+        <span class="cal-event ${fc.type}" style="font-size:11px;padding:2px 7px;margin-right:6px;">${fc.name}</span>
+        ${KO_DAYS_FULL[fc.day]} ${fc.times.join(', ')}
+      </div>`;
+    fc.times.forEach(time => {
+      const key = fc.id + '_' + time;
+      const info = state.fixedClassTeachers[key] || {};
+      html += `<div style="background:var(--surface2);border-radius:8px;padding:10px;margin-bottom:6px;">
+        <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">${time} 타임</div>
+        <div style="display:flex;gap:8px;margin-bottom:6px;">
+          <input type="text" placeholder="담당 선생님" value="${info.teacher||''}"
+            style="flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface);color:var(--text);font-family:inherit;"
+            onchange="updateClassTeacher('${key}','teacher',this.value)">
+        </div>
+        <input type="text" placeholder="아이 이름 (쉼표 구분)" value="${(info.students||[]).join(', ')}"
+          style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface);color:var(--text);font-family:inherit;"
+          onchange="updateClassStudents('${key}',this.value)">
+      </div>`;
+    });
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function updateClassTeacher(key, field, value) {
+  if (!state.fixedClassTeachers[key]) state.fixedClassTeachers[key] = { teacher: '', students: [] };
+  state.fixedClassTeachers[key][field] = value;
+  saveState();
+}
+function updateClassStudents(key, value) {
+  if (!state.fixedClassTeachers[key]) state.fixedClassTeachers[key] = { teacher: '', students: [] };
+  state.fixedClassTeachers[key].students = value.split(',').map(s=>s.trim()).filter(Boolean);
+  saveState();
+}
+
+// ============================================================
+// HOME VISIT
+// ============================================================
+function switchHvTab(tab) {
+  ['schedule','teachers','students'].forEach(t => {
+    document.getElementById('hv-'+t).style.display = t===tab ? 'block' : 'none';
+    document.getElementById('hvtab-'+t).classList.toggle('active', t===tab);
+  });
+  currentHvTab = tab;
+  if (tab === 'students') renderHvStudentTeacherSelect();
+  renderHomeVisit();
+}
+
+function addHvTeacher() {
+  const name = document.getElementById('hv-teacher-name').value.trim();
+  const payType = document.getElementById('hv-teacher-pay').value;
+  const amount = parseFloat(document.getElementById('hv-teacher-amount').value) || 0;
+  if (!name) return alert('선생님 이름을 입력해주세요');
+  const existing = state.hvTeachers.find(t => t.name === name);
+  if (existing) { existing.payType = payType; existing.amount = amount; }
+  else state.hvTeachers.push({ id: uid(), name, payType, amount });
+  document.getElementById('hv-teacher-name').value = '';
+  document.getElementById('hv-teacher-amount').value = '';
+  saveState(); renderHomeVisit();
+}
+
+function renderHvStudentTeacherSelect() {
+  const sel = document.getElementById('hv-student-teacher');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">선생님 선택</option>' +
+    state.hvTeachers.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  if (cur) sel.value = cur;
+
+  const pkgSel = document.getElementById('hv-student-pkg');
+  const curPkg = pkgSel.value;
+  const active = state.packages.filter(p => p.used < p.total);
+  pkgSel.innerHTML = '<option value="">패키지 없음</option>' +
+    active.map(p => `<option value="${p.id}">${p.student ? p.student+' - ' : ''}${p.name} (잔여 ${p.total-p.used}회)</option>`).join('');
+  if (curPkg) pkgSel.value = curPkg;
+}
+
+function addHvStudent() {
+  const name = document.getElementById('hv-student-name').value.trim();
+  const teacherId = document.getElementById('hv-student-teacher').value;
+  const day = parseInt(document.getElementById('hv-student-day').value);
+  const time = document.getElementById('hv-student-time').value;
+  const pkgId = document.getElementById('hv-student-pkg').value;
+  if (!name || !teacherId) return alert('이름과 선생님을 선택해주세요');
+  state.hvStudents.push({ id: uid(), name, teacherId, day, time, pkgId });
+  document.getElementById('hv-student-name').value = '';
+  saveState(); renderHomeVisit();
+}
+
+function renderHomeVisit() {
+  // Teachers list
+  const tl = document.getElementById('hv-teachers-list');
+  if (tl) {
+    tl.innerHTML = state.hvTeachers.length ? state.hvTeachers.map(t => {
+      const cnt = state.hvStudents.filter(s=>s.teacherId===t.id).length;
+      return `<div class="list-item">
+        <div class="list-item-left"><div class="list-item-name">${t.name}</div>
+        <div class="list-item-sub">${t.payType==='수업당'?'수업당 '+fmt(t.amount):' 월 고정 '+fmt(t.amount)} · 담당 ${cnt}명</div></div>
+        <button class="del-btn" onclick="removeHvTeacher('${t.id}')">✕</button>
+      </div>`;
+    }).join('') : '<div class="empty">선생님 없음</div>';
+  }
+
+  // Students list
+  const sl = document.getElementById('hv-students-list');
+  if (sl) {
+    sl.innerHTML = state.hvStudents.length ? state.hvStudents.map(s => {
+      const teacher = state.hvTeachers.find(t=>t.id===s.teacherId);
+      const pkg = s.pkgId ? state.packages.find(p=>p.id===s.pkgId) : null;
+      return `<div class="list-item">
+        <div class="list-item-left">
+          <div class="list-item-name">${s.name}</div>
+          <div class="list-item-sub">${KO_DAYS_FULL[s.day]} ${s.time} · ${teacher?teacher.name:'?'}${pkg?' · 📦 '+pkg.name:''}</div>
+        </div>
+        <button class="del-btn" onclick="removeHvStudent('${s.id}')">✕</button>
+      </div>`;
+    }).join('') : '<div class="empty">등록된 학생 없음</div>';
+  }
+
+  // Schedule view by teacher
+  const schedEl = document.getElementById('hv-teacher-list');
+  if (!schedEl) return;
+  if (!state.hvTeachers.length) {
+    schedEl.innerHTML = '<div class="card"><div class="empty"><div class="empty-icon">👩‍🏫</div>선생님 탭에서 먼저 선생님을 등록해주세요</div></div>';
+    return;
+  }
+  schedEl.innerHTML = state.hvTeachers.map(t => {
+    const students = state.hvStudents.filter(s=>s.teacherId===t.id)
+      .sort((a,b) => a.day!==b.day ? a.day-b.day : a.time.localeCompare(b.time));
+    const slots = students.map(s => {
+      const pkg = s.pkgId ? state.packages.find(p=>p.id===s.pkgId) : null;
+      const remaining = pkg ? (pkg.total - pkg.used) : null;
+      const lowPkg = remaining !== null && remaining <= 2;
+      return `<div class="hv-slot">
+        <div class="hv-slot-left">
+          <div class="hv-slot-day">${KO_DAYS_FULL[s.day]}</div>
+          <div class="hv-slot-time">${s.time}</div>
+        </div>
+        <div style="flex:2;">
+          <div class="hv-slot-student">🧒 ${s.name}</div>
+          ${pkg ? `<div class="hv-slot-pkg">${lowPkg?'⚠️ ':''}📦 ${pkg.name} (잔여 ${remaining}회)</div>` : ''}
+        </div>
+        ${lowPkg ? '<span class="badge badge-red">소진임박</span>' : ''}
+      </div>`;
+    }).join('') || '<div style="padding:12px 0;color:var(--text3);font-size:13px;">담당 학생 없음</div>';
+
+    return `<div class="hv-teacher-card">
+      <div class="hv-teacher-name">
+        <span class="badge badge-green">👩‍🏫</span> ${t.name}
+        <span style="font-size:12px;color:var(--text3);font-weight:400;">
+          ${t.payType==='수업당'?'수업당 '+fmt(t.amount):'월 고정 '+fmt(t.amount)}
+        </span>
+      </div>
+      ${slots}
+    </div>`;
+  }).join('');
+}
+
+function removeHvTeacher(id) {
+  state.hvTeachers = state.hvTeachers.filter(t=>t.id!==id);
+  state.hvStudents = state.hvStudents.filter(s=>s.teacherId!==id);
+  saveState(); renderHomeVisit();
+}
+function removeHvStudent(id) {
+  state.hvStudents = state.hvStudents.filter(s=>s.id!==id);
+  saveState(); renderHomeVisit();
+}
+
+// ============================================================
+// SALES / EXPENSE
+// ============================================================
+function onSaleTypeChange() {
+  document.getElementById('pkg-fields').style.display =
+    document.getElementById('sale-type').value === '수업패키지' ? 'block' : 'none';
+}
+function addSale() {
+  const type = document.getElementById('sale-type').value;
+  const amount = parseFloat(document.getElementById('sale-amount').value)||0;
+  const memo = document.getElementById('sale-memo').value.trim();
+  const date = document.getElementById('sale-date').value || todayStr();
+  if (!amount) return alert('금액을 입력해주세요');
+  state.sales.push({ id: uid(), type, amount, memo, date });
+  if (type === '수업패키지') {
+    const student = document.getElementById('sale-pkg-student').value.trim();
+    const pkgName = document.getElementById('sale-pkg-name').value.trim();
+    const total = parseInt(document.getElementById('sale-pkg-total').value)||0;
+    if (pkgName && total > 0) state.packages.push({ id: uid(), name: pkgName, student, total, used: 0, date });
+    document.getElementById('sale-pkg-student').value = '';
+    document.getElementById('sale-pkg-name').value = '';
+    document.getElementById('sale-pkg-total').value = '';
+  }
+  document.getElementById('sale-amount').value = '';
+  document.getElementById('sale-memo').value = '';
+  saveState(); refreshAll();
+}
+function addExpense() {
+  const type = document.getElementById('expense-type').value;
+  const amount = parseFloat(document.getElementById('expense-amount').value)||0;
+  const memo = document.getElementById('expense-memo').value.trim();
+  const date = document.getElementById('expense-date').value || todayStr();
+  if (!amount) return alert('금액을 입력해주세요');
+  state.expenses.push({ id: uid(), type, amount, memo, date });
+  document.getElementById('expense-amount').value = '';
+  document.getElementById('expense-memo').value = '';
+  saveState(); refreshAll();
+}
+
+// ============================================================
+// PACKAGES
+// ============================================================
+function switchPkgTab(tab) {
+  document.getElementById('pkg-active-list').style.display = tab==='active'?'block':'none';
+  document.getElementById('pkg-done-list').style.display = tab==='done'?'block':'none';
+  document.getElementById('ptab-active').classList.toggle('active', tab==='active');
+  document.getElementById('ptab-done').classList.toggle('active', tab==='done');
+}
+function renderPackages() {
+  const active = state.packages.filter(p=>p.used<p.total);
+  const done = state.packages.filter(p=>p.used>=p.total);
+  document.getElementById('pkg-active-count').textContent = active.length;
+  document.getElementById('pkg-low-count').textContent = active.filter(p=>(p.total-p.used)<=2).length;
+
+  function pkgCard(p) {
+    const rem = p.total - p.used;
+    const pct = Math.round((p.used/p.total)*100);
+    const fc = rem<=1?'danger':rem<=3?'warn':'';
+    return `<div class="pkg-card">
+      <div style="display:flex;justify-content:space-between;">
+        <div><div class="pkg-name">${p.name}</div>${p.student?`<div class="pkg-student">🧒 ${p.student}</div>`:''}<div style="font-size:11px;color:var(--text3);margin-top:2px;">${p.date}</div></div>
+        <div style="display:flex;gap:6px;align-items:flex-start;">
+          ${rem<=2?'<span class="badge badge-red">소진임박</span>':''}
+          <button class="del-btn" onclick="removeItem('packages','${p.id}')">✕</button>
+        </div>
+      </div>
+      <div class="pkg-progress-bar"><div class="pkg-progress-fill ${fc}" style="width:${pct}%"></div></div>
+      <div class="pkg-counts"><span>사용 ${p.used}회</span><span>잔여 <strong>${rem}</strong>회 / ${p.total}회</span></div>
+    </div>`;
+  }
+  document.getElementById('pkg-active-list').innerHTML = active.length ? active.map(pkgCard).join('') : '<div class="empty"><div class="empty-icon">📦</div>활성 패키지 없음</div>';
+  document.getElementById('pkg-done-list').innerHTML = done.length ? done.map(pkgCard).join('') : '<div class="empty">완료 패키지 없음</div>';
+}
+
+// ============================================================
+// STAFF
+// ============================================================
+function switchStaffTab(tab) {
+  ['hourly','monthly','teacher'].forEach(t => {
+    document.getElementById('staff-'+t).style.display = t===tab?'block':'none';
+    document.getElementById('stab-'+t).classList.toggle('active', t===tab);
+  });
+}
+function onTeacherTypeChange() {
+  document.getElementById('t-count-row').style.display =
+    document.getElementById('t-type').value==='수업당'?'block':'none';
+}
+function addHourly() {
+  const name=document.getElementById('h-name').value.trim();
+  const rate=parseFloat(document.getElementById('h-rate').value)||0;
+  const hours=parseFloat(document.getElementById('h-hours').value)||0;
+  const date=document.getElementById('h-date').value||todayStr();
+  if (!name||!rate||!hours) return alert('이름, 시급, 시간을 입력해주세요');
+  state.hourly.push({ id:uid(), name, rate, hours, total:rate*hours, date });
+  document.getElementById('h-hours').value='';
+  saveState(); refreshAll();
+}
+function addMonthly() {
+  const name=document.getElementById('m-name').value.trim();
+  const salary=parseFloat(document.getElementById('m-salary').value)||0;
+  if (!name||!salary) return alert('이름과 월급을 입력해주세요');
+  state.monthly.push({ id:uid(), name, salary });
+  document.getElementById('m-name').value=''; document.getElementById('m-salary').value='';
+  saveState(); refreshAll();
+}
+function addTeacher() {
+  const name=document.getElementById('t-name').value.trim();
+  const payType=document.getElementById('t-type').value;
+  const amount=parseFloat(document.getElementById('t-amount').value)||0;
+  if (!name||!amount) return alert('이름과 금액을 입력해주세요');
+  const ex=state.teachers.find(t=>t.name===name);
+  if (ex) { ex.payType=payType; ex.amount=amount; ex.salary=payType==='고정'?amount:0; }
+  else state.teachers.push({ id:uid(), name, payType, amount, salary:payType==='고정'?amount:0 });
+  document.getElementById('t-name').value=''; document.getElementById('t-amount').value='';
+  saveState(); refreshAll();
+}
+function addFixed() {
+  const name=document.getElementById('f-name').value.trim();
+  const amount=parseFloat(document.getElementById('f-amount').value)||0;
+  const category=document.getElementById('f-category').value;
+  if (!name||!amount) return alert('항목명과 금액을 입력해주세요');
+  state.fixed.push({ id:uid(), name, amount, category });
+  document.getElementById('f-name').value=''; document.getElementById('f-amount').value='';
+  saveState(); refreshAll();
+}
+
+function removeItem(arr, id) {
+  state[arr] = state[arr].filter(i=>i.id!==id);
+  saveState(); refreshAll();
+}
+
+// ============================================================
+// CALC PROFIT
+// ============================================================
+function calcProfit() {
+  const income = state.sales.reduce((a,s)=>a+s.amount,0);
+  const expense = state.expenses.reduce((a,e)=>a+e.amount,0);
+  const hourlyPay = state.hourly.reduce((a,h)=>a+h.total,0);
+  const monthlyPay = state.monthly.reduce((a,m)=>a+m.salary,0);
+  const teacherPay = state.teachers.reduce((a,t)=>a+(t.payType==='고정'?t.salary:t.amount*(parseInt(document.getElementById('t-count')?.value)||0)),0);
+  const hvPay = state.hvTeachers.reduce((a,t)=>{
+    if (t.payType==='수업당') { const cnt=state.hvStudents.filter(s=>s.teacherId===t.id).length*4; return a+t.amount*cnt; }
+    return a+t.amount;
+  },0);
+  const staff = hourlyPay + monthlyPay + teacherPay + hvPay;
+  const fixed = state.fixed.reduce((a,f)=>a+f.amount,0);
+  return { income, expense, staff, fixed, net: income-expense-staff-fixed };
+}
+
+// ============================================================
+// TODO
+// ============================================================
+function addTodo() {
+  const input = document.getElementById('todo-input');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!state.todos) state.todos = [];
+  state.todos.push({ id: uid(), text, done: false });
+  input.value = '';
+  saveState(); renderTodoList();
+}
+function toggleTodo(id) {
+  const item = state.todos.find(t=>t.id===id);
+  if (item) item.done = !item.done;
+  saveState(); renderTodoList();
+}
+function removeTodo(id) {
+  state.todos = state.todos.filter(t=>t.id!==id);
+  saveState(); renderTodoList();
+}
+function renderTodoList() {
+  if (!state.todos) state.todos = [];
+  const el = document.getElementById('todo-list');
+  if (!el) return;
+  el.innerHTML = state.todos.length ? state.todos.map(t => `
+    <div class="todo-item">
+      <div class="todo-check ${t.done?'done':''}" onclick="toggleTodo('${t.id}')"></div>
+      <div class="todo-title ${t.done?'done':''}">${t.text}</div>
+      <button class="del-btn" onclick="removeTodo('${t.id}')">✕</button>
+    </div>`).join('') : '<div class="empty"><div class="empty-icon">✅</div>할 일을 추가해보세요</div>';
+}
+
+// ============================================================
+// EXPORT
+// ============================================================
+function exportSummary() {
+  const p = calcProfit();
+  const text = `[도담 키즈카페 월간 요약]\n총 매출: ${fmtFull(p.income)}\n총 매입: ${fmtFull(p.expense)}\n인건비: ${fmtFull(p.staff)}\n고정지출: ${fmtFull(p.fixed)}\n─────────\n순이익: ${fmtFull(p.net)}`;
+  if (navigator.clipboard) navigator.clipboard.writeText(text).then(()=>alert('복사 완료!'));
+  else { const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); alert('복사 완료!'); }
+}
+
+// ============================================================
+// RENDER ALL
+// ============================================================
+function renderHome() {
+  const t = todayStr();
+  const now = new Date();
+  document.getElementById('home-month-label').textContent = now.getFullYear()+'년 '+(now.getMonth()+1)+'월';
+  const todaySales = state.sales.filter(s=>s.date===t);
+  const todayExp = state.expenses.filter(e=>e.date===t);
+  const todayClasses = getFixedClassesForDate(t);
+  document.getElementById('today-income').textContent = fmtFull(todaySales.reduce((a,s)=>a+s.amount,0));
+  document.getElementById('today-expense').textContent = fmtFull(todayExp.reduce((a,e)=>a+e.amount,0));
+  document.getElementById('today-classes').textContent = todayClasses.length+'건';
+  const p = calcProfit();
+  document.getElementById('month-income').textContent = fmtFull(p.income);
+  document.getElementById('month-expense').textContent = fmtFull(p.expense);
+  const allToday = [
+    ...todaySales.map(s=>({label:s.type,sub:s.memo,amount:s.amount,cls:'income',sign:'+'})),
+    ...todayExp.map(e=>({label:e.type,sub:e.memo,amount:e.amount,cls:'expense',sign:'-'}))
+  ];
+  document.getElementById('today-tx-list').innerHTML = allToday.length
+    ? allToday.map(i=>`<div class="list-item"><div class="list-item-left"><div class="list-item-name">${i.label}</div><div class="list-item-sub">${i.sub||''}</div></div><span class="amount ${i.cls}">${i.sign}${fmt(i.amount)}</span></div>`).join('')
+    : '<div class="empty"><div class="empty-icon">📋</div>오늘 내역이 없어요</div>';
+  renderTodoList();
+}
+
+function renderSalesList() {
+  const el = document.getElementById('sales-list');
+  el.innerHTML = state.sales.length ? state.sales.slice().reverse().map(s =>
+    `<div class="list-item"><div class="list-item-left"><div class="list-item-name">${s.type}</div><div class="list-item-sub">${s.date}${s.memo?' · '+s.memo:''}</div></div><div class="list-item-right"><span class="amount income">+${fmt(s.amount)}</span><button class="del-btn" onclick="removeItem('sales','${s.id}')">✕</button></div></div>`
+  ).join('') : '<div class="empty">내역 없음</div>';
+}
+
+function renderExpenseList() {
+  const el = document.getElementById('expense-list');
+  el.innerHTML = state.expenses.length ? state.expenses.slice().reverse().map(e =>
+    `<div class="list-item"><div class="list-item-left"><div class="list-item-name">${e.type}</div><div class="list-item-sub">${e.date}${e.memo?' · '+e.memo:''}</div></div><div class="list-item-right"><span class="amount expense">-${fmt(e.amount)}</span><button class="del-btn" onclick="removeItem('expenses','${e.id}')">✕</button></div></div>`
+  ).join('') : '<div class="empty">내역 없음</div>';
+}
+
+function renderStaff() {
+  const hl = document.getElementById('hourly-list');
+  hl.innerHTML = state.hourly.length ? state.hourly.slice().reverse().map(h =>
+    `<div class="list-item"><div class="list-item-left"><div class="list-item-name">${h.name}</div><div class="list-item-sub">${h.date} · 시급 ${fmt(h.rate)} × ${h.hours}h</div></div><div class="list-item-right"><span class="amount expense">${fmt(h.total)}</span><button class="del-btn" onclick="removeItem('hourly','${h.id}')">✕</button></div></div>`
+  ).join('') : '<div class="empty">기록 없음</div>';
+  document.getElementById('hourly-total').textContent = fmt(state.hourly.reduce((a,h)=>a+h.total,0));
+
+  const ml = document.getElementById('monthly-list');
+  ml.innerHTML = state.monthly.length ? state.monthly.map(m =>
+    `<div class="list-item"><div class="list-item-left"><div class="list-item-name">${m.name}</div><div class="list-item-sub">월급직</div></div><div class="list-item-right"><span class="amount expense">${fmt(m.salary)}</span><button class="del-btn" onclick="removeItem('monthly','${m.id}')">✕</button></div></div>`
+  ).join('') : '<div class="empty">기록 없음</div>';
+  document.getElementById('monthly-total').textContent = fmt(state.monthly.reduce((a,m)=>a+m.salary,0));
+
+  const tl = document.getElementById('teacher-list');
+  tl.innerHTML = state.teachers.length ? state.teachers.map(t =>
+    `<div class="list-item"><div class="list-item-left"><div class="list-item-name">${t.name}</div><div class="list-item-sub">${t.payType==='수업당'?'수업당 '+fmt(t.amount):'월 고정 '+fmt(t.salary)}</div></div><div class="list-item-right"><span class="amount expense">${fmt(t.payType==='고정'?t.salary:t.amount)}</span><button class="del-btn" onclick="removeItem('teachers','${t.id}')">✕</button></div></div>`
+  ).join('') : '<div class="empty">기록 없음</div>';
+  document.getElementById('teacher-total').textContent = fmt(state.teachers.reduce((a,t)=>a+(t.payType==='고정'?t.salary:t.amount),0));
+}
+
+function renderFixed() {
+  const fl = document.getElementById('fixed-list');
+  fl.innerHTML = state.fixed.length ? state.fixed.map(f =>
+    `<div class="list-item"><div class="list-item-left"><div class="list-item-name">${f.name}</div><div class="list-item-sub">${f.category}</div></div><div class="list-item-right"><span class="amount expense">${fmt(f.amount)}</span><button class="del-btn" onclick="removeItem('fixed','${f.id}')">✕</button></div></div>`
+  ).join('') : '<div class="empty">항목 없음</div>';
+  document.getElementById('fixed-total').textContent = fmt(state.fixed.reduce((a,f)=>a+f.amount,0));
+}
+
+function renderReport() {
+  const p = calcProfit();
+  document.getElementById('r-income').textContent = fmtFull(p.income);
+  document.getElementById('r-expense').textContent = fmtFull(p.expense);
+  document.getElementById('r-staff').textContent = fmtFull(p.staff);
+  document.getElementById('r-fixed').textContent = fmtFull(p.fixed);
+  const rp = document.getElementById('r-profit');
+  rp.textContent = fmtFull(p.net);
+  rp.className = 'stat-val ' + (p.net>=0?'green':'red');
+  rp.style.fontSize = '26px';
+  const types = ['입장료','수업패키지','단체수업','음료간식'];
+  document.getElementById('r-breakdown').innerHTML = types.map(tp => {
+    const sum = state.sales.filter(s=>s.type===tp).reduce((a,s)=>a+s.amount,0);
+    const pct = p.income > 0 ? Math.round(sum/p.income*100) : 0;
+    return `<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:13px;color:var(--text2);">${tp}</span><span style="font-size:13px;font-weight:600;">${fmt(sum)} (${pct}%)</span></div><div class="progress-bar"><div class="progress-fill green" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+}
+
+function refreshAll() {
+  renderHome();
+  renderSalesList();
+  renderExpenseList();
+  renderCalendar();
+  renderHomeVisit();
+  renderPackages();
+  renderStaff();
+  renderFixed();
+  renderReport();
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function openSettings() {
+  document.getElementById('settings-modal').classList.add('open');
+  document.getElementById('settings-url-input').value = SCRIPT_URL;
+}
+function closeSettings() {
+  document.getElementById('settings-modal').classList.remove('open');
+}
+function saveSettings() {
+  const url = document.getElementById('settings-url-input').value.trim();
+  SCRIPT_URL = url;
+  localStorage.setItem(SCRIPT_URL_KEY, url);
+  closeSettings();
+  if (url) {
+    loadFromSheets().then(() => refreshAll());
+  } else {
+    setSyncStatus('offline');
+  }
+}
+async function manualSync() {
+  if (!SCRIPT_URL) { alert('먼저 설정에서 Script URL을 입력해주세요'); return; }
+  await loadFromSheets();
+  refreshAll();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  loadLocalState();
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+  const t = todayStr();
+  ['sale-date','expense-date','h-date'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = t;
+  });
+  document.getElementById('day-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+  document.getElementById('settings-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeSettings();
+  });
+
+  refreshAll();
+
+  if (SCRIPT_URL) {
+    const ok = await loadFromSheets();
+    if (ok) refreshAll();
+  } else {
+    setSyncStatus('offline');
+  }
+}
+
+init();
+</script>
+</body>
+</html>
